@@ -97,6 +97,15 @@ class VisualizadorDataset:
         self.dataset = pd.read_csv(ruta)
         print(f"Dataset cargado desde {ruta}.")
     
+    def get_dataset(self, variables=None):
+        if variables is None:
+            return self.dataset
+        return self.dataset[variables]
+
+    def set_dataset(self, dataset):
+        self.dataset = dataset
+        return self
+    
     def histograma(self, variable):
         plt.figure(figsize=(8, 5))
         plt.gcf().canvas.manager.set_window_title("Histograma")
@@ -106,18 +115,29 @@ class VisualizadorDataset:
         plt.ylabel("Frecuencia")
         plt.show()
 
-    def barras(self, variable, multiple=False, separador="|"):
-        if multiple:
-            datos = self.dataset[variable].str.split(separador).explode().value_counts()
-        else:
-            datos = self.dataset[variable]
-        
+    def combinar_variables(self, var1, var2):
+        return self.dataset[[var1, var2]]
+
+    def barras(self, variable, multiple=False, separador="|", desde="Var", extra=""):
+        if desde=="Var":
+            if multiple:
+                datos = self.dataset[variable].str.split(separador).explode().value_counts()
+            else:
+                datos = self.dataset[variable]
+        elif desde=="Valor":
+            datos = variable
+
+
         plt.figure(figsize=(12,6))
         plt.gcf().canvas.manager.set_window_title("Barras")
         datos.plot(kind='bar', color='lightgreen')
-        plt.title('Géneros de películas')
-        plt.xlabel('Género')
-        plt.ylabel('Cantidad de películas')
+        if desde=="Var":
+            plt.title(f'Gráfico de barras de {variable}')
+            plt.xlabel(variable)
+        elif desde=="Valor":
+            plt.title('Gráfico de barras')
+            plt.xlabel(extra)
+        plt.ylabel('Cantidad')
         plt.xticks(rotation=45)
         plt.show()
     
@@ -141,9 +161,9 @@ class VisualizadorDataset:
         plt.gcf().canvas.manager.set_window_title("Líneas")
         sns.lineplot(data=promedios, x=var_x, y=var_y, hue=var_dato, marker='o')
 
-        plt.title(f'Evolución del promedio de {var_y} por top {top} {var_dato}')
-        plt.xlabel(f'var_x')
-        plt.ylabel(f'Promedio {var_y}')
+        plt.title(f'Gráfico de lineas de {var_y} por top {top} {var_dato}')
+        plt.xlabel(var_x)
+        plt.ylabel(var_y)
         plt.legend(title=var_dato)
         plt.grid(True)
         plt.show()
@@ -158,19 +178,36 @@ class VisualizadorDataset:
             print(f"Variable '{nombre}' calculada.")
             return self.dataset[var1] - self.dataset[var2]
         
-    def agrupacion(self, var_objetivo, var_agrupar, accion):
-        if accion=="Suma":
-            return self.dataset.groupby(var_agrupar)[var_objetivo].sum()
-        elif accion=="Media":
-            return self.dataset.groupby(var_agrupar)[var_objetivo].mean()
+    def agrupacion(self, var_objetivo, var_agrupar, accion, ordenar="No", top=0):
+        resultado = self.dataset.groupby(var_agrupar)[var_objetivo]
+
+        # Operación
+        if accion == "Suma":
+            resultado = resultado.sum()
+        elif accion == "Media":
+            resultado = resultado.mean()
+
+        # Ordenación
+        if ordenar == "Asc":
+            resultado = resultado.sort_values(ascending=True)
+        elif ordenar == "Desc":
+            resultado = resultado.sort_values(ascending=False)
         
+        # Top
+        if top != 0:
+            resultado = resultado.head(top)
+            
+
+        return resultado
+
+
 
     def barras_comparadas(self, var_x, var_y, dato1, dato2, top, extra1="", extra2=""):
         dato_1 = dato1.sort_values(ascending=False).head(top)
         dato_2 = dato2.sort_values(ascending=False).head(top)
 
         fig, axes = plt.subplots(1, 2, figsize=(18,6))   # 1 fila, 2 columnas
-        plt.gcf().canvas.manager.set_window_title("Barras agrupadas")
+        plt.gcf().canvas.manager.set_window_title("Gráfico de barras agrupadas")
 
         # --- SUBGRAFICO 1 ---
         dato_1.plot(kind='bar', color='mediumseagreen', ax=axes[0])

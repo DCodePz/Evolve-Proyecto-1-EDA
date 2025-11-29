@@ -56,7 +56,16 @@ def visualizacion():
     # Histograma
     visualizador.histograma("Imdb Score")
 
-    # Barras
+    # Barras 1
+    old_dataset = visualizador.get_dataset()
+    actores = visualizador.get_dataset(["Actor 1 Name", "Actor 1 Facebook Likes"])
+    visualizador = visualizador.set_dataset(actores)
+    actores = visualizador.agrupacion("Actor 1 Facebook Likes", "Actor 1 Name", "Suma", ordenar="Desc", top=5)
+    visualizador = visualizador.set_dataset(actores)
+    visualizador.barras(actores, desde="Valor", extra="Actores")
+
+    # Barras 2
+    visualizador.set_dataset(old_dataset)
     visualizador.barras("Genres", True)
 
     # Lineas
